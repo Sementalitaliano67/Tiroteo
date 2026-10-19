@@ -66,6 +66,12 @@ export default function SignInPage() {
           />
         </div>
 
+        <div className="text-right -mt-2">
+          <Link to="/recuperar" className="text-sm text-primary-600 font-semibold hover:text-primary-700">
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
+
         {error && (
           <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
             {error}

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { localDateString } from '../lib/date'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import {
@@ -8,42 +9,56 @@ import {
   type Category,
   type Difficulty,
   type Frequency,
-  XP_BY_DIFFICULTY,
+  type CompleteResult,
 } from '../types'
 
 interface LevelUpInfo {
   newLevel: number
 }
 
+export function isScheduledOn(h: Pick<Habit, 'frequency' | 'frequency_days'>, dow: number): boolean {
+  if (h.frequency === 'Diario') return true
+  if (!h.frequency_days || h.frequency_days.length === 0) return true
+  return h.frequency_days.includes(dow)
+}
+
 export function useHabitsGame() {
-  const { profile, refreshProfile } = useAuth()
+  const { refreshProfile } = useAuth()
   const { showToast } = useToast()
   const [habits, setHabits] = useState<HabitWithCompletion[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(false)
   const [levelUp, setLevelUp] = useState<LevelUpInfo | null>(null)
 
-  const today = new Date().toISOString().slice(0, 10)
+  // Día local: a las 22:00 de Argentina sigue siendo el mismo día.
+  const today = localDateString()
   const todayDow = new Date().getDay()
 
-  const isScheduledToday = (h: Habit): boolean => {
-    if (h.frequency === 'Diario') return true
-    if (!h.frequency_days || h.frequency_days.length === 0) return true
-    return h.frequency_days.includes(todayDow)
-  }
+  const isScheduledToday = (h: Habit): boolean => isScheduledOn(h, todayDow)
 
   const fetchHabits = useCallback(async () => {
+    setLoadError(false)
     const { data, error } = await supabase
       .from('habits')
       .select('*')
       .eq('is_active', true)
       .order('created_at', { ascending: true })
-    if (error) return
+    if (error) {
+      setLoadError(true)
+      setLoading(false)
+      return
+    }
     const habitList = (data || []) as Habit[]
 
-    const { data: completions } = await supabase
+    const { data: completions, error: completionsError } = await supabase
       .from('habit_completions')
       .select('habit_id')
       .eq('completed_date', today)
+    if (completionsError) {
+      setLoadError(true)
+      setLoading(false)
+      return
+    }
 
     const completedIds = new Set((completions || []).map((c) => c.habit_id))
 
@@ -59,6 +74,12 @@ export function useHabitsGame() {
     fetchHabits()
   }, [fetchHabits])
 
+  const retry = useCallback(() => {
+    setLoading(true)
+    fetchHabits()
+  }, [fetchHabits])
+
+  // La XP de un hábito personal la fija la base según la dificultad.
   const createHabit = useCallback(
     async (
       name: string,
@@ -71,7 +92,6 @@ export function useHabitsGame() {
         name: name.trim(),
         category,
         difficulty,
-        xp_reward: XP_BY_DIFFICULTY[difficulty],
         frequency,
         frequency_days: frequencyDays,
       })
@@ -101,7 +121,6 @@ export function useHabitsGame() {
           name: name.trim(),
           category,
           difficulty,
-          xp_reward: XP_BY_DIFFICULTY[difficulty],
           frequency,
           frequency_days: frequencyDays,
         })
@@ -126,85 +145,46 @@ export function useHabitsGame() {
       }
       setHabits((prev) => prev.filter((h) => h.id !== id))
       showToast('Hábito eliminado.', 'success')
+      await refreshProfile()
       return true
     },
-    [showToast],
+    [showToast, refreshProfile],
   )
 
+  // XP, nivel y racha los calcula el servidor en una sola operación.
   const completeHabit = useCallback(
-    async (habitId: string) => {
+    async (habitId: string): Promise<boolean> => {
       const habit = habits.find((h) => h.id === habitId)
       if (!habit || habit.completed_today) {
         showToast('Solo puedes completar un hábito una vez por día.', 'info')
-        return
+        return false
       }
 
-      // Insert completion
-      const { error: completionError } = await supabase
-        .from('habit_completions')
-        .insert({ habit_id: habitId, completed_date: today })
-      if (completionError) {
-        if (completionError.code === '23505') {
+      setHabits((prev) => prev.map((h) => (h.id === habitId ? { ...h, completed_today: true } : h)))
+      const { data, error } = await supabase.rpc('complete_habit', { p_habit_id: habitId })
+      if (error) {
+        if (error.code === '23505') {
           showToast('Solo puedes completar un hábito una vez por día.', 'info')
-          setHabits((prev) => prev.map((h) => (h.id === habitId ? { ...h, completed_today: true } : h)))
         } else {
-          showToast('Error al completar el hábito.', 'error')
+          setHabits((prev) => prev.map((h) => (h.id === habitId ? { ...h, completed_today: false } : h)))
+          showToast(error.message || 'Error al completar el hábito.', 'error')
         }
-        return
+        return false
       }
 
-      // Add XP
-      const newXp = (profile?.xp ?? 0) + habit.xp_reward
-      const currentLevel = profile?.level ?? 1
-      const xpRequired = currentLevel * 100
-      let newLevel = currentLevel
-
-      if (newXp >= xpRequired) {
-        newLevel = currentLevel + 1
-        setLevelUp({ newLevel })
-      }
-
-      // Check if all scheduled habits are now completed → update streak
-      const updatedHabits = habits.map((h) =>
-        h.id === habitId ? { ...h, completed_today: true } : h,
-      )
-      const scheduledToday = updatedHabits.filter((h) => isScheduledToday(h))
-      const allCompleted = scheduledToday.length > 0 && scheduledToday.every((h) => h.completed_today)
-
-      let newStreak = profile?.streak_count ?? 0
-      let newLastStreakDate = profile?.last_streak_date ?? null
-
-      if (allCompleted) {
-        const lastDate = profile?.last_streak_date
-        if (lastDate === today) {
-          // already counted today
-        } else {
-          const yesterday = new Date()
-          yesterday.setDate(yesterday.getDate() - 1)
-          const yesterdayStr = yesterday.toISOString().slice(0, 10)
-          if (lastDate === yesterdayStr) {
-            newStreak = (profile?.streak_count ?? 0) + 1
-          } else {
-            newStreak = 1
-          }
-          newLastStreakDate = today
-        }
-      }
-
-      await supabase
-        .from('profiles')
-        .update({ xp: newXp, level: newLevel, streak_count: newStreak, last_streak_date: newLastStreakDate })
-        .eq('id', profile!.id)
-
-      setHabits(updatedHabits)
+      const result = data as CompleteResult
+      if (result.leveled_up) setLevelUp({ newLevel: result.level })
       await refreshProfile()
+      return true
     },
-    [habits, profile, today, refreshProfile],
+    [habits, refreshProfile, showToast],
   )
 
   return {
     habits,
     loading,
+    loadError,
+    retry,
     levelUp,
     setLevelUp,
     createHabit,

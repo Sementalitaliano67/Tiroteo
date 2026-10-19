@@ -39,7 +39,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 ? 'bg-red-600 text-white'
                 : t.type === 'success'
                   ? 'bg-primary-600 text-white'
-                  : 'bg-neutral-800 text-white'
+                  : 'bg-slate-800 text-white'
             }`}
           >
             {t.message}

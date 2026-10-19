@@ -14,6 +14,7 @@ export default function SignUpPage() {
   const [emailError, setEmailError] = useState<string | null>(null)
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [confirmSent, setConfirmSent] = useState(false)
 
   const nameRef = useRef<HTMLInputElement>(null)
   const emailRef = useRef<HTMLInputElement>(null)
@@ -62,10 +63,15 @@ export default function SignUpPage() {
     if (hasError) return
 
     setLoading(true)
-    const { error: signUpError } = await signUp(email.trim(), password, displayName.trim())
+    const { error: signUpError, needsConfirmation } = await signUp(email.trim(), password, displayName.trim())
     if (signUpError) {
       setFormError(signUpError)
       setLoading(false)
+      return
+    }
+    if (needsConfirmation) {
+      setLoading(false)
+      setConfirmSent(true)
       return
     }
     navigate('/dashboard')
@@ -84,6 +90,11 @@ export default function SignUpPage() {
         </>
       }
     >
+      {confirmSent ? (
+        <div className="rounded-xl bg-primary-50 border border-primary-200 px-4 py-3 text-sm text-primary-800" role="status">
+          Cuenta creada. Te mandamos un correo a <strong>{email}</strong>: abrí el enlace para confirmarla y después iniciá sesión.
+        </div>
+      ) : (
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">Nombre</label>
@@ -146,6 +157,7 @@ export default function SignUpPage() {
           )}
         </button>
       </form>
+      )}
     </AuthLayout>
   )
 }

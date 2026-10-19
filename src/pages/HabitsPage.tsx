@@ -6,16 +6,17 @@ import HabitCard from '../components/HabitCard'
 import HabitFormModal from '../components/HabitFormModal'
 import DeleteConfirmModal from '../components/DeleteConfirmModal'
 import LevelUpModal from '../components/LevelUpModal'
-import StreakWidget from '../components/StreakWidget'
-import XpBar from '../components/XpBar'
+import AppHeader from '../components/AppHeader'
 import EmptyState from '../components/EmptyState'
 import FloatingXp from '../components/FloatingXp'
 
 export default function HabitsPage() {
-  const { profile, user, signOut } = useAuth()
+  const { profile, user } = useAuth()
   const {
     habits,
     loading,
+    loadError,
+    retry,
     levelUp,
     setLevelUp,
     createHabit,
@@ -72,30 +73,7 @@ export default function HabitsPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      {/* Header */}
-      <header className="bg-white border-b border-neutral-100 sticky top-0 z-20">
-        <div className="max-w-3xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 flex-shrink-0">
-            <div className="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center shadow-md shadow-primary-600/20">
-              <svg viewBox="0 0 32 32" className="w-6 h-6" fill="none">
-                <path d="M10 16l4 4 8-8" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-            <span className="text-xl font-display font-bold text-neutral-900 hidden sm:block">Tiroteo</span>
-          </div>
-
-          <div className="flex items-center gap-3 flex-1 justify-end">
-            <StreakWidget streak={profile?.streak_count ?? 0} />
-            <XpBar xp={profile?.xp ?? 0} level={profile?.level ?? 1} />
-            <button
-              onClick={() => signOut()}
-              className="text-sm font-medium text-neutral-500 hover:text-neutral-900 transition-colors whitespace-nowrap"
-            >
-              Salir
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Main */}
       <main className="max-w-3xl mx-auto px-6 py-8">
@@ -125,6 +103,12 @@ export default function HabitsPage() {
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" opacity="0.25" />
               <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
             </svg>
+          </div>
+        ) : loadError ? (
+          <div className="card p-8 text-center" role="alert">
+            <h3 className="text-lg font-display font-bold text-neutral-900 mb-1">No pudimos cargar tus hábitos</h3>
+            <p className="text-neutral-500 mb-4">Revisá tu conexión e intentá de nuevo.</p>
+            <button onClick={retry} className="btn-primary">Reintentar</button>
           </div>
         ) : habits.length === 0 ? (
           <EmptyState onCreate={openCreate} />

@@ -24,7 +24,7 @@ export default function AuthLayout({ title, subtitle, children, footer }: AuthLa
             <h1 className="text-3xl font-display font-bold text-white">Tiroteo</h1>
           </div>
           <p className="text-primary-100 text-lg leading-relaxed">
-            Convierte tus hábitos en un juego. Gana XP, mantén rachas, desbloquea insignias y compite con tus amigos.
+            Convierte tus hábitos en un juego. Gana XP, mantén rachas, desbloquea insignias y compite en grupos.
           </p>
           <div className="mt-10 flex flex-wrap gap-4 justify-center lg:justify-start">
             <div className="flex items-center gap-2 text-primary-100">
@@ -37,7 +37,7 @@ export default function AuthLayout({ title, subtitle, children, footer }: AuthLa
             </div>
             <div className="flex items-center gap-2 text-primary-100">
               <span className="w-2 h-2 bg-accent-400 rounded-full" />
-              <span className="text-sm font-medium">Ranking de amigos</span>
+              <span className="text-sm font-medium">Ranking por grupo</span>
             </div>
           </div>
         </div>

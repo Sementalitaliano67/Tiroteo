@@ -130,7 +130,7 @@ export default function HabitFormModal({ mode, habit, onSave, onCancel }: HabitF
                   className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
                     category === cat
                       ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
-                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300'
+                      : 'bg-surface text-neutral-700 border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   {cat}
@@ -153,7 +153,7 @@ export default function HabitFormModal({ mode, habit, onSave, onCancel }: HabitF
                   className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
                     difficulty === diff
                       ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
-                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300'
+                      : 'bg-surface text-neutral-700 border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   {diff}
@@ -175,7 +175,7 @@ export default function HabitFormModal({ mode, habit, onSave, onCancel }: HabitF
                   className={`px-3 py-2.5 rounded-xl text-sm font-medium border transition-all duration-200 ${
                     frequency === freq
                       ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
-                      : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-300'
+                      : 'bg-surface text-neutral-700 border-neutral-200 hover:border-neutral-300'
                   }`}
                 >
                   {freq}
@@ -192,7 +192,7 @@ export default function HabitFormModal({ mode, habit, onSave, onCancel }: HabitF
                     className={`w-10 h-10 rounded-lg text-xs font-medium border transition-all duration-200 ${
                       frequencyDays.includes(idx)
                         ? 'bg-primary-600 text-white border-primary-600'
-                        : 'bg-white text-neutral-600 border-neutral-200 hover:border-neutral-300'
+                        : 'bg-surface text-neutral-600 border-neutral-200 hover:border-neutral-300'
                     }`}
                   >
                     {label}

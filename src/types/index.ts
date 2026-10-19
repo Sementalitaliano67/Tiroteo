@@ -56,6 +56,61 @@ export interface Profile {
   level: number
   streak_count: number
   last_streak_date: string | null
+  timezone: string
+  reminder_time: string | null
+  theme: 'claro' | 'oscuro'
+  best_streak: number
+}
+
+export const PROFILE_COLUMNS =
+  'id, display_name, avatar_url, xp, level, streak_count, last_streak_date, timezone, reminder_time, theme, best_streak'
+
+export interface Group {
+  id: string
+  name: string
+  creator_id: string
+  invite_code: string
+  created_at: string
+}
+
+export interface MyGroup {
+  id: string
+  name: string
+  creator_id: string
+  invite_code: string
+  members: number
+  my_position: number
+  my_xp: number
+}
+
+export interface GroupHabit {
+  id: string
+  group_id: string
+  name: string
+  frequency: Frequency
+  frequency_days: number[] | null
+  xp: number
+  is_active: boolean
+  created_at: string
+}
+
+export interface GroupHabitWithCompletion extends GroupHabit {
+  completed_today: boolean
+}
+
+export interface RankingRow {
+  user_id: string
+  display_name: string
+  xp: number
+  rank_position: number
+}
+
+export interface CompleteResult {
+  xp_awarded: number
+  xp: number
+  level: number
+  leveled_up: boolean
+  streak?: number
 }
 
 export interface HabitWithCompletion extends Habit {
